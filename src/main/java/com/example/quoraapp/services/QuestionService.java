@@ -2,6 +2,8 @@ package com.example.quoraapp.services;
 
 import com.example.quoraapp.adapter.QuestionAdapter;
 import com.example.quoraapp.dto.QuestionResponseDTO;
+import com.example.quoraapp.events.ViewCountEvent;
+import com.example.quoraapp.producers.KafkaEventProducer;
 import com.example.quoraapp.repositories.QuestionRepository;
 import com.example.quoraapp.utils.CursorUtils;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,8 @@ public class QuestionService implements IQuestionService {
 
 
     private final QuestionRepository questionRepository;
+    private final KafkaEventProducer kafkaEventProducer;
+
 
 
     @Override
@@ -75,7 +79,11 @@ public class QuestionService implements IQuestionService {
     public Mono<QuestionResponseDTO> getQuestionById(String id) {
         return questionRepository.findById(id)
                 .map(QuestionAdapter::toQuestionResponseDTO)
-                .doOnSuccess(response -> System.out.println("Question Retrieved Successfully: " + response))
+                .doOnSuccess(response -> {
+                    System.out.println("Question Fetched Successfully "+response);
+                    ViewCountEvent viewCountEvent = new ViewCountEvent(id,"question",LocalDateTime.now());
+                    kafkaEventProducer.publishViewCountEvent(viewCountEvent);
+                })
                 .switchIfEmpty(Mono.error(new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Question not found with id " + id
