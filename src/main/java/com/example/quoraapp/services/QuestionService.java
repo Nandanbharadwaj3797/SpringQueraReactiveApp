@@ -3,7 +3,9 @@ package com.example.quoraapp.services;
 import com.example.quoraapp.adapter.QuestionAdapter;
 import com.example.quoraapp.dto.QuestionResponseDTO;
 import com.example.quoraapp.events.ViewCountEvent;
+import com.example.quoraapp.models.QuestionElasticDocument;
 import com.example.quoraapp.producers.KafkaEventProducer;
+import com.example.quoraapp.repositories.QuestionDocumentRepository;
 import com.example.quoraapp.repositories.QuestionRepository;
 import com.example.quoraapp.utils.CursorUtils;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,8 @@ public class QuestionService implements IQuestionService {
 
     private final QuestionRepository questionRepository;
     private final KafkaEventProducer kafkaEventProducer;
+    private final QuestionIndexService questionIndexService;
+    private final QuestionDocumentRepository questionDocumentRepository;
 
 
 
@@ -42,7 +47,10 @@ public class QuestionService implements IQuestionService {
                 .updatedAt(LocalDateTime.now())
                 .build();
         return questionRepository.save(question)
-                .map(QuestionAdapter::toQuestionResponseDTO)
+                .map(savedQuestion->{
+                    questionIndexService.createQuestionIndex(savedQuestion);
+                    return QuestionAdapter.toQuestionResponseDTO(savedQuestion);
+                })
                 .doOnSuccess(response->System.out.println("Question Created Successfully:"+response))
                 .doOnError(error->System.out.println("Error creating question:"+error));
 
@@ -98,5 +106,7 @@ public class QuestionService implements IQuestionService {
                 )))
                 .flatMap(existing -> questionRepository.deleteById(id));
     }
-
+    public List<QuestionElasticDocument> searchQuestionsByElasticSearch(String query) {
+        return questionDocumentRepository.findByTitleContainingOrContentContaining(query,query);
+    }
 }

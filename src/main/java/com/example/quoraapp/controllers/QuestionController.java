@@ -2,12 +2,15 @@ package com.example.quoraapp.controllers;
 
 import com.example.quoraapp.dto.QuestionRequestDTO;
 import com.example.quoraapp.dto.QuestionResponseDTO;
+import com.example.quoraapp.models.QuestionElasticDocument;
 import com.example.quoraapp.services.IQuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
@@ -63,5 +66,10 @@ public class QuestionController {
     @GetMapping("/tag/{tag}")
     public Flux<QuestionResponseDTO> getQuestionsByTag(@PathVariable String tag) {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @GetMapping("/elasticsearch")
+    public List<QuestionElasticDocument> searchQuestionByElasticSearch(@RequestParam String query){
+        return questionService.searchQuestionsByElasticSearch(query);
     }
 }

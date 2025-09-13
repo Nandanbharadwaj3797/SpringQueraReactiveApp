@@ -2,8 +2,11 @@ package com.example.quoraapp.services;
 
 import com.example.quoraapp.dto.QuestionRequestDTO;
 import com.example.quoraapp.dto.QuestionResponseDTO;
+import com.example.quoraapp.models.QuestionElasticDocument;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 public interface IQuestionService {
 
@@ -17,5 +20,5 @@ public interface IQuestionService {
 
     public Mono<Void> deleteQuestionById(String id);
 
-
+    public List<QuestionElasticDocument>searchQuestionsByElasticSearch(String query);
 }
